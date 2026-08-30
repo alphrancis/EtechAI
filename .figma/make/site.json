@@ -1,0 +1,10 @@
+{
+  "description": "Engage with an AI-powered chat interface designed for emerging technology students to explore and interact with Google's AI digital ecosystem seamlessly.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
