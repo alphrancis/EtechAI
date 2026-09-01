@@ -1,6 +1,6 @@
 How to run this shit
 
-npm install or npm i
+npm install or npm i \n
 npm run dev
 
 cd backend
