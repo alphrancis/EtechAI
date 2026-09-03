@@ -30,8 +30,6 @@ cd backend
 python -m venv .venv
 
 # Activate it
-# macOS/Linux:
-source venv/bin/activate
 # Windows:
 .venv\Scripts\activate
 
@@ -61,13 +59,13 @@ npm install
 npm run dev
 ```
 
-Frontend will start on **http://localhost:5173**
+Frontend will start on **http://localhost:8443**
 
 ---
 
 ## 4. Open in Browser
 
-Go to: **http://localhost:5173**
+Go to: **http://localhost:8443**
 
 The frontend automatically fetches available models from the backend.
 
@@ -97,7 +95,7 @@ The frontend automatically fetches available models from the backend.
 | Problem | Fix |
 |---|---|
 | `CORS error` in browser | Make sure backend is running before opening frontend |
-| `Failed to load models` | Check that `GOOGLE_API_KEY` is set and backend is on port 8443 |
+| `Failed to load models` | Check that `GOOGLE_API_KEY` is set and backend is on port 8000 |
 | Port already in use | Change port in `backend/main.py` or frontend `.env` |
 
 ---
