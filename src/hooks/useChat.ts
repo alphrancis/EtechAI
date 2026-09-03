@@ -34,15 +34,20 @@ export function useChat(model: Model | null, config: Config){
         setTyping(true);
         setError(null);
 
+        const startedAt = Date.now();
+
         try{
             const res = await sendChat({
                 model: model.id,
                 messages: [...messages, userMsg].map((m) => ({ role: m.role, text: m.text})),
                 config,
             });
+
+            const responseTime = (Date.now() - startedAt / 1000);
+
             setMessages((prev) => [
                 ...prev, 
-                { id: Date.now() + 1, role: "ai", text: res.text, timestamp: ts() },
+                { id: Date.now() + 1, role: "ai", text: res.text, timestamp: ts(), responseTime },
             ]);
         }catch (err: any) {
             setError(err.message || "Failed to get response");

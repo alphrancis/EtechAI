@@ -12,6 +12,7 @@ export interface Message {
     role: Role;
     text: string;
     timestamp: string;
+    responseTime?: number;
 }
 
 export type Tool = "chat" | "prompt" | "vision" | "code" | "embeddings";

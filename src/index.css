@@ -55,3 +55,14 @@ body,
 .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
 .spin-slow { animation: spin-slow 8s linear infinite; }
+
+@keyframes cascade-bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-5px);
+    opacity: -1;
+  }
+}

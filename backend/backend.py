@@ -40,7 +40,6 @@ app.add_middleware(
 )
 
 
-
 # ── Pydantic Models ──
 class ModelInfo(BaseModel):
     id: str
@@ -99,123 +98,99 @@ class CodeRequest(BaseModel):
     model: str
 
 
+# ── Model Filtering ──
+EXCLUDED_PATTERNS = [
+    "tts",
+    "embedding",
+    "aqa",
+    "vision",
+    "imagen",
+    "preview",
+    "exp",
+    "001",
+    "002",
+    "2.5",      
+]
+
+ALLOWED_MODELS = {
+    "gemini-3.1-flash-lite",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-3.7-flash",
+    "gemini-3.1-flash-image",
+    "gemma-4-31b-it",
+    "gemma-4-26b-a4b-it"
+}
+
 # ── Endpoints ──
 
 @app.get("/")
 def health_check():
-    return{
+    return {
         "status": "online",
         "message": "Backend is running"
     }
 
-@app.get(
-    "/api/models",
-    response_model=List[ModelInfo]
-)
+
+@app.get("/api/models", response_model=List[ModelInfo])
 def get_models():
-
     try:
-
         available_models = []
 
         for model in client.models.list():
+            model_id = model.name.replace("models/", "")
+            supported_actions = getattr(model, "supported_actions", [])
 
-            model_id = model.name.replace(
-                "models/",
-                ""
-            )
-
-            supported_actions = getattr(
-                model,
-                "supported_actions",
-                []
-            )
-
-            # Only show Gemini models
-            # that support content generation
-            if (
-                not model_id.startswith("gemini")
-                or "generateContent" not in supported_actions
-            ):
+            if model_id not in ALLOWED_MODELS:
+                continue
+            if "generateContent" not in supported_actions:
                 continue
 
             model_lower = model_id.lower()
 
-            # Automatic UI categorization
             if "flash" in model_lower:
-
-                badge = "Fast"
-                color = "#f0c84a"
-
-            elif "pro" in model_lower:
-
-                badge = "Advanced"
-                color = "#6bcf8e"
-
+                badge, color = "Fast", "#f0c84a"
+            elif "flash-lite" in model_lower:
+                badge, color = "Advanced", "#6bcf8e"
             else:
+                badge, color = "Available", "#7c9ef8"
 
-                badge = "Available"
-                color = "#7c9ef8"
-
-            available_models.append(
-                ModelInfo(
-                    id=model_id,
-                    name=model.display_name or model_id,
-                    badge=badge,
-                    color=color,
-                    description=(
-                        model.description
-                        or "Gemini AI model"
-                    )
-                )
-            )
+            available_models.append(ModelInfo(
+                id=model_id,
+                name=model.display_name or model_id,
+                badge=badge,
+                color=color,
+                description=model.description or "Gemini AI model"
+            ))
 
         return available_models
 
     except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve models: {str(e)}")
 
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to retrieve models: {str(e)}"
-        )
 
 @app.get("/api/debug/models")
 def debug_models():
-
     try:
-
         result = []
 
         for model in client.models.list():
-
             result.append({
                 "name": model.name,
-                "display_name": getattr(
-                    model,
-                    "display_name",
-                    None
-                ),
-                "supported_actions": getattr(
-                    model,
-                    "supported_actions",
-                    []
-                )
+                "display_name": getattr(model, "display_name", None),
+                "supported_actions": getattr(model, "supported_actions", [])
             })
 
         return result
 
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
-    
+
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
-
     try:
-
         if not req.messages:
             raise HTTPException(
                 status_code=400,
@@ -225,32 +200,19 @@ def chat(req: ChatRequest):
         contents = []
 
         for message in req.messages:
-
-            # System messages are handled separately
             if message.role == "system":
                 continue
 
-            # Gemini uses "model" instead of "ai"
-            role = (
-                "model"
-                if message.role == "ai"
-                else "user"
-            )
+            role = "model" if message.role == "ai" else "user"
 
             contents.append({
                 "role": role,
-                "parts": [
-                    {
-                        "text": message.text
-                    }
-                ]
+                "parts": [{"text": message.text}]
             })
 
         response = client.models.generate_content(
             model=req.model,
-
             contents=contents,
-
             config={
                 "temperature": req.config.temperature,
                 "max_output_tokens": req.config.maxTokens,
@@ -260,34 +222,14 @@ def chat(req: ChatRequest):
             }
         )
 
-        usage = getattr(
-            response,
-            "usage_metadata",
-            None
-        )
+        usage = getattr(response, "usage_metadata", None)
 
         return ChatResponse(
             text=response.text,
             model=req.model,
             tokensUsed={
-                "input": (
-                    getattr(
-                        usage,
-                        "prompt_token_count",
-                        0
-                    )
-                    if usage
-                    else 0
-                ),
-                "output": (
-                    getattr(
-                        usage,
-                        "candidates_token_count",
-                        0
-                    )
-                    if usage
-                    else 0
-                )
+                "input": getattr(usage, "prompt_token_count", 0) if usage else 0,
+                "output": getattr(usage, "candidates_token_count", 0) if usage else 0
             }
         )
 
@@ -295,20 +237,23 @@ def chat(req: ChatRequest):
         raise
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+        err = str(e)
+        if "429" in err or "RESOURCE_EXHAUSTED" in err:
+            raise HTTPException(
+                status_code=429,
+                detail="Model is rate-limited on your plan. Try a Flash model."
+            )
+        if "404" in err or "NOT_FOUND" in err:
+            raise HTTPException(
+                status_code=404,
+                detail="This model is no longer available. Please select another."
+            )
+        raise HTTPException(status_code=500, detail=err)
 
 
-@app.post(
-    "/api/embeddings",
-    response_model=EmbeddingResult
-)
+@app.post("/api/embeddings", response_model=EmbeddingResult)
 def embeddings(req: EmbeddingRequest):
-
     try:
-
         import math
 
         response_a = client.models.embed_content(
@@ -324,25 +269,10 @@ def embeddings(req: EmbeddingRequest):
         vecA = response_a.embeddings[0].values
         vecB = response_b.embeddings[0].values
 
-        # Cosine similarity
-        dot = sum(
-            a * b
-            for a, b in zip(vecA, vecB)
-        )
-
-        magA = math.sqrt(
-            sum(a * a for a in vecA)
-        )
-
-        magB = math.sqrt(
-            sum(b * b for b in vecB)
-        )
-
-        sim = (
-            dot / (magA * magB)
-            if magA and magB
-            else 0
-        )
+        dot = sum(a * b for a, b in zip(vecA, vecB))
+        magA = math.sqrt(sum(a * a for a in vecA))
+        magB = math.sqrt(sum(b * b for b in vecB))
+        sim = dot / (magA * magB) if magA and magB else 0
 
         return EmbeddingResult(
             vecA=vecA,
@@ -351,39 +281,23 @@ def embeddings(req: EmbeddingRequest):
         )
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/vision")
 def vision(req: VisionRequest):
-
     try:
-
-        # Remove data URL prefix
         if "," in req.image:
             image_data = req.image.split(",", 1)[1]
         else:
             image_data = req.image
 
-        # Decode base64
-        image_bytes = base64.b64decode(
-            image_data
-        )
-
-        # Convert bytes to PIL Image
-        image = Image.open(
-            io.BytesIO(image_bytes)
-        )
+        image_bytes = base64.b64decode(image_data)
+        image = Image.open(io.BytesIO(image_bytes))
 
         response = client.models.generate_content(
             model=req.model,
-            contents=[
-                req.prompt,
-                image
-            ]
+            contents=[req.prompt, image]
         )
 
         return {
@@ -392,18 +306,17 @@ def vision(req: VisionRequest):
         }
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/code")
 def code(req: CodeRequest):
     try:
-        model = genai.GenerativeModel(req.model)
-        response = model.generate_content(f"Explain this code:\\n\\n```python\\n{req.code}\\n```")
-        return response.text
+        response = client.models.generate_content(
+            model=req.model,
+            contents=f"Explain this code:\n\n```python\n{req.code}\n```"
+        )
+        return {"text": response.text, "model": req.model}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

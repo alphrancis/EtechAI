@@ -36,10 +36,10 @@ return (
         </button>
 
         {open && (
-            <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl overflow-hidden z-50" style={{ background: "#111820", border: "1px solid rgba(255,255,255,0.09)", boxShadow: "0 24px 48px rgba(0,0,0,0.5)", animation: "fade-in 0.15s ease-out both" }}>
-            <p className="px-4 pt-3 pb-1 text-[9px] tracking-widest uppercase font-semibold" style={{ color: "rgba(255,255,255,0.25)", fontFamily: "JetBrains Mono, monospace" }}>
-                Select Model
-            </p>
+            <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl overflow-hidden z-50" style={{ background: "#111820", border: "1px solid rgba(255,255,255,0.09)", boxShadow: "0 24px 48px rgba(0,0,0,0.5)", animation: "fade-in 0.15s ease-out both", maxHeight: "320px", overflowY: "auto" }}>
+                <p className="px-4 pt-3 pb-1 text-[9px] tracking-widest uppercase font-semibold sticky top-0 z-10" style={{ color: "rgba(255,255,255,0.25)", fontFamily: "JetBrains Mono, monospace", background: "#111820" }}>
+                    Select Model
+                </p>
             {models.map((m) => (
                 <button
                 key={m.id}

@@ -24,7 +24,7 @@ export default function App() {
   const [tool, setTool] = useState<Tool>("chat");
   const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
   const [sidebar, setSidebar] = useState(true);
-  const [rightPanel, setRightPanel] = useState(true);
+  const [rightPanel, setRightPanel] = useState(false);
 
   const { models, selected, setSelected, loading, error } = useModels();
 
