@@ -43,7 +43,7 @@ export function useChat(model: Model | null, config: Config){
                 config,
             });
 
-            const responseTime = (Date.now() - startedAt / 1000);
+            const responseTime = (Date.now() - startedAt) / 1000;
 
             setMessages((prev) => [
                 ...prev, 
