@@ -9,7 +9,7 @@ function ts(){
 const SEED: Message[] = [{
     id: 1,
     role: "ai",
-    text: "Welcome to the Google AI Open Platform. I'm Powered by Gemini. Ask me anything - or switch tools using the left panel to explore Prompt Builder, Vision Analysis, Code Execution, and Embeddings.",
+    text: "Welcome to the Google AI Open Platform. I'm Powered by Gemini. Ask me anything - or switch tools using the left panel to explore Prompt Builder, Vision Analysis, Code Execution, and Image Creation.",
     timestamp: ts(),
 }];
 
@@ -43,7 +43,7 @@ export function useChat(model: Model | null, config: Config){
                 config,
             });
 
-            const responseTime = (Date.now() - startedAt / 1000);
+            const responseTime = (Date.now() - startedAt) / 1000;
 
             setMessages((prev) => [
                 ...prev, 
