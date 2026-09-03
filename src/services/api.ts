@@ -43,7 +43,8 @@ export async function analyzeImage(imageBase64: string, prompt: string, modelId:
         body: JSON.stringify({ image: imageBase64, prompt, model: modelId}),
     });
     if (!res.ok) throw new ApiError(res.status, await res.text());
-    return res.text();
+    const data = await res.json();
+    return data.text;
 }
 
 export async function runCode(code: string, modelId: string): Promise<string>{

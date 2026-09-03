@@ -1,4 +1,6 @@
 import { useState, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Typing } from "../ui/Typing";
 import { analyzeImage } from "../../services/api";
 import type { Model } from "../../types";
@@ -69,7 +71,20 @@ import type { Model } from "../../types";
             {running ? <><Typing /><span>Analyzing…</span></> : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg><span>Analyze Image</span></>}
         </button>
         {error && <div className="rounded-xl px-4 py-3 text-sm" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5" }}>{error}</div>}
-        {output && <div className="rounded-xl px-4 py-4 text-sm leading-relaxed" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", color: "rgba(255,255,255,0.82)" }}>{output}</div>}
+        {output && <div className="rounded-xl px-4 py-4 text-sm leading-relaxed" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", color: "rgba(255,255,255,0.82)" }}>
+            <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                strong: ({ children }) => <strong style={{ color: "#fff", fontWeight: 600 }}>{children}</strong>,
+                ul: ({ children }) => <ul className="list-disc pl-5 mb-2 space-y-1">{children}</ul>,
+                ol: ({ children }) => <ol className="list-decimal pl-5 mb-2 space-y-1">{children}</ol>,
+                li: ({ children }) => <li className="pl-1">{children}</li>,
+                h1: ({ children }) => <h1 className="text-base font-semibold mt-3 mb-1.5" style={{ color: "rgba(255,255,255,0.9)" }}>{children}</h1>,
+                h2: ({ children }) => <h2 className="text-sm font-semibold mt-3 mb-1.5" style={{ color: "rgba(255,255,255,0.9)" }}>{children}</h2>,
+                h3: ({ children }) => <h3 className="text-sm font-semibold mt-3 mb-1" style={{ color: "rgba(255,255,255,0.85)" }}>{children}</h3>,
+            }}>{output}
+            </ReactMarkdown></div>}
         </div>
     );
     }

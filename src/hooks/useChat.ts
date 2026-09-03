@@ -9,7 +9,7 @@ function ts(){
 const SEED: Message[] = [{
     id: 1,
     role: "ai",
-    text: "Welcome to the Google AI Open Platform. I'm Powered by Gemini. Ask me anything - or switch tools using the left panel to explore Prompt Builder, Vision Analysis, Code Execution, and Embdedings.",
+    text: "Welcome to the Google AI Open Platform. I'm Powered by Gemini. Ask me anything - or switch tools using the left panel to explore Prompt Builder, Vision Analysis, Code Execution, and Embeddings.",
     timestamp: ts(),
 }];
 
