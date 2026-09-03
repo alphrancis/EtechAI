@@ -16,13 +16,42 @@ import type { Model } from "../../types";
     const [running, setRunning] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    
+
+    function handleFile(f: File) {
+    const r = new FileReader();
+    r.onload = (ev) => setPreview(ev.target?.result as string);
+    r.readAsDataURL(f);
+    }
 
     function onFile(e: React.ChangeEvent<HTMLInputElement>) {
         const f = e.target.files?.[0];
         if (!f) return;
-        const r = new FileReader();
-        r.onload = (ev) => setPreview(ev.target?.result as string);
-        r.readAsDataURL(f);
+        handleFile(f);
+    }
+
+    function onDrop(e: React.DragEvent<HTMLDivElement>) {
+        e.preventDefault();
+        setIsDragging(false);
+        const f = e.dataTransfer.files?.[0];
+        if (!f) return;
+        if (!f.type.startsWith("image/")) return;
+        handleFile(f);
+    }
+
+    function onDragOver(e: React.DragEvent<HTMLDivElement>) {
+        e.preventDefault();
+        setIsDragging(true);
+    }
+
+    function onDragLeave() {
+        setIsDragging(false);
+    }
+
+    function removePreview() {
+        setPreview(null);
+        setError(null);
     }
 
     async function analyze() {
@@ -45,13 +74,42 @@ import type { Model } from "../../types";
         <div>
             <label className="text-[10px] tracking-widest uppercase font-semibold block mb-2" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "JetBrains Mono, monospace" }}>Upload Image</label>
             <div
-            onClick={() => fileRef.current?.click()}
-            className="rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 py-8 cursor-pointer transition-all duration-150"
-            style={{ borderColor: preview ? `${model.color}66` : "rgba(255,255,255,0.1)", background: preview ? `${model.color}08` : "rgba(255,255,255,0.02)" }}
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onDrop={onDrop}
+                onClick={() => fileRef.current?.click()}
+                className="rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 py-8 cursor-pointer transition-all duration-150 relative"
+                style={{
+                    borderColor: preview
+                        ? (isDragging ? model.color : `${model.color}66`)
+                        : (isDragging ? model.color : "rgba(255,255,255,0.1)"),
+                    background: preview
+                        ? (isDragging ? `${model.color}12` : `${model.color}08`)
+                        : (isDragging ? `${model.color}08` : "rgba(255,255,255,0.02)"),
+                    borderWidth: isDragging ? 3 : 2,
+                }}
             >
-            {preview ? <img src={preview} alt="upload preview" className="max-h-40 rounded-lg object-contain" /> : <>
+            {preview ? (
+                <div className="relative inline-flex flex-col items-center">
+                    <img src={preview} alt="upload preview" className="max-h-40 rounded-lg object-contain" />
+                    <button
+                        onClick={(e) => { e.stopPropagation(); removePreview(); }}
+                        className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center transition-colors"
+                        style={{ background: "rgba(239,68,68,0.2)", color: "#fca5a5", border: "1px solid rgba(239,68,68,0.4)" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.4)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.2)"; }}
+                    >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                    </button>
+                </div>
+            ) : isDragging ? <>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: `${model.color}88` }}>
+                    <rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" />
+                </svg>
+                <span className="text-sm" style={{ color: `${model.color}88` }}>Drop image here</span>
+            </> : <>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: "rgba(255,255,255,0.25)" }}>
-                <rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" />
+                    <rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" />
                 </svg>
                 <span className="text-sm" style={{ color: "rgba(255,255,255,0.35)" }}>Click to upload image</span>
                 <span className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>PNG, JPG, WEBP, GIF supported</span>
