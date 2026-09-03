@@ -1,5 +1,5 @@
 // src/App.tsx
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { LogoMark } from "./components/ui/LogoMark";
 import { EcosystemStatus } from "./components/EcosystemStatus";
 import { ConfigPanel, DEFAULT_CONFIG } from "./components/ConfigPanel";
@@ -7,17 +7,25 @@ import { ModelPicker } from "./components/ModelPicker";
 import { ChatTool } from "./components/tools/ChatTool";
 import { PromptTool } from "./components/tools/PromptTool";
 import { VisionTool } from "./components/tools/VisionTool";
+import { ImageCreationTool } from "./components/tools/ImageCreationTool";
 import { CodeTool } from "./components/tools/CodeTool";
-import { EmbeddingsTool } from "./components/tools/EmbeddingTools";
 import { useModels } from "./hooks/useModels";
-import type { Tool, Config } from "./types";
+import type { Tool, Config, Model } from "./types";
+
+const POLLINATIONS_MODEL: Model = {
+  id: "pollinations/flux",
+  name: "Flux (Pollinations)",
+  badge: "Free",
+  color: "#a855f7",
+  description: "Pollinations FLUX — no API key needed",
+};
 
 const NAV_TOOLS: { id: Tool; label: string; icon: React.ReactNode }[] = [
   { id: "chat", label: "Chat", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg> },
   { id: "prompt", label: "Prompt Builder", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg> },
   { id: "vision", label: "Vision", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg> },
   { id: "code", label: "Code Execution", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg> },
-  { id: "embeddings", label: "Embeddings", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="3" /><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /></svg> },
+  { id: "image-creation", label: "Image Creation", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg> },
 ];
 
 export default function App() {
@@ -27,6 +35,17 @@ export default function App() {
   const [rightPanel, setRightPanel] = useState(false);
 
   const { models, selected, setSelected, loading, error } = useModels();
+  const prevModelRef = useRef<Model | null>(null);
+
+  useEffect(() => {
+    if (tool === "image-creation") {
+      prevModelRef.current = selected;
+      setSelected(POLLINATIONS_MODEL);
+    } else if (prevModelRef.current && selected?.id === "pollinations/flux") {
+      setSelected(prevModelRef.current);
+      prevModelRef.current = null;
+    }
+  }, [tool]);
 
   const toolTitle = NAV_TOOLS.find((t) => t.id === tool)?.label ?? "";
 
@@ -130,7 +149,7 @@ export default function App() {
             {tool === "prompt" && <PromptTool model={selected} />}
             {tool === "vision" && <VisionTool model={selected} />}
             {tool === "code" && <CodeTool model={selected} />}
-            {tool === "embeddings" && <EmbeddingsTool model={selected} />}
+            {tool === "image-creation" && <ImageCreationTool model={selected} />}
           </div>
 
           {rightPanel && (

@@ -1,6 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000"
 
-import type { Model, ChatRequest, ChatResponse, EmbeddingResult, Config} from "../types";
+import type { Model, ChatRequest, ChatResponse, Config} from "../types";
 
 class ApiError extends Error {
     constructor(public status: number, message: string){
@@ -29,12 +29,6 @@ export async function sendChat(req: ChatRequest): Promise<ChatResponse> {
     });
 }
 
-export async function generateEmbeddings(textA: string, textB: string, modelId: string): Promise<EmbeddingResult> {
-        return fetchJson<EmbeddingResult>(`${API_BASE}/api/embeddings`, {
-        method: "POST",
-        body: JSON.stringify({textA, textB, modelId }),
-    });
-}
 
 export async function analyzeImage(imageBase64: string, prompt: string, modelId: string): Promise<string>{
     const res = await fetch(`${API_BASE}/api/vision`, {

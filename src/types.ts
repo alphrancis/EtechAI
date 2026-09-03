@@ -15,7 +15,7 @@ export interface Message {
     responseTime?: number;
 }
 
-export type Tool = "chat" | "prompt" | "vision" | "code" | "embeddings";
+export type Tool = "chat" | "prompt" | "vision" | "code" | "image-creation";
 
 export interface Config {
     temperature: number;
@@ -38,9 +38,3 @@ export interface ChatResponse {
     tokenUsed?: { input: number; output: number};
 }
 
-export interface EmbeddingResult {
-    vecA: number[];
-    vecB: number[];
-    sim: number;
-    
-}
