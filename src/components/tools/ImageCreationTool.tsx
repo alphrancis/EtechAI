@@ -129,7 +129,7 @@ export function ImageCreationTool({ model, historyCallbacks, restoredSession }: 
 
     try {
       const encoded = encodeURIComponent(t);
-      const url = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024&nologo=true&seed=${Date.now()}`;
+      const url = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=1024`;
       const aiMsg: ImageMessage = { id: Date.now() + 1, role: "ai", type: "image", content: url, timestamp: ts() };
       setMessages((prev) => [...prev, aiMsg]);
       if (historyCallbacks && sessionIdRef.current) {
