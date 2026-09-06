@@ -48,7 +48,7 @@ export async function runCode(code: string, modelId: string): Promise<string>{
         body: JSON.stringify({ code, model: modelId}),
     });
     if (!res.ok) throw new ApiError(res.status, await res.text());
-    return res.text();
+    return (await res.json()).text;
 }
 
 export { ApiError };
