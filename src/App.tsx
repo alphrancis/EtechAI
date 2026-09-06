@@ -11,6 +11,9 @@ import { ImageCreationTool } from "./components/tools/ImageCreationTool";
 import { CodeTool } from "./components/tools/CodeTool";
 import { useModels } from "./hooks/useModels";
 import type { Tool, Config, Model } from "./types";
+import { useChatHistory } from "./hooks/useChatHistory";
+import { ChatHistory } from "./components/ChatHistory";
+import type { ChatSession } from "./hooks/useChatHistory";
 
 const POLLINATIONS_MODEL: Model = {
   id: "pollinations/flux",
@@ -36,6 +39,11 @@ export default function App() {
 
   const { models, selected, setSelected, loading, error } = useModels();
   const prevModelRef = useRef<Model | null>(null);
+
+  const history = useChatHistory();
+
+  const [restoredSession, setRestoredSession] = useState<ChatSession | null>(null);
+  const [restoredImageSession, setRestoredImageSession] = useState<ChatSession | null>(null);
 
   useEffect(() => {
     if (tool === "image-creation") {
@@ -89,7 +97,12 @@ export default function App() {
           <nav className="flex flex-col gap-0.5 px-3 py-3">
             <p className="text-[9px] tracking-widest uppercase px-2 mb-1.5 font-semibold" style={{ color: "rgba(255,255,255,0.2)", fontFamily: "JetBrains Mono, monospace" }}>Tools</p>
             {NAV_TOOLS.map((t) => (
-              <button key={t.id} onClick={() => setTool(t.id)}
+              <button key={t.id} onClick={() => {
+                setTool(t.id);
+                setRestoredSession(null);
+                setRestoredImageSession(null);
+                history.setActiveId(null);
+              }}
                 className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-left transition-all duration-100"
                 style={{
                   background: tool === t.id ? `rgba(255,255,255,0.07)` : "transparent",
@@ -107,12 +120,27 @@ export default function App() {
           <div className="mx-3 my-2 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
           <EcosystemStatus model={selected} />
 
-          <div className="mt-auto px-4 py-4 border-t" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" style={{ boxShadow: "0 0 5px #34d399" }} />
-              <span className="text-[10px]" style={{ color: "rgba(255,255,255,0.25)", fontFamily: "JetBrains Mono, monospace" }}>Connected</span>
-            </div>
-            <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.15)", fontFamily: "JetBrains Mono, monospace" }}>{selected.name} · v2.1</p>
+          <div className="mx-3 my-2 h-px" style={{ background: "rgba(255,255,255,0.05)" }} />
+
+          {/* Scrollable history section */}
+          <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
+            <ChatHistory
+              sessions={history.sessions}
+              activeId={history.activeId}
+              onSelect={(session: ChatSession) => {
+                history.setActiveId(session.id);
+                setTool(session.tool);
+                if (session.tool === "chat") {
+                    setRestoredSession(session);
+                    setRestoredImageSession(null);
+                } else if (session.tool === "image-creation") {
+                  setRestoredImageSession(session);
+                  setRestoredSession(null);
+                }
+              }}
+              onDelete={history.deleteSession}
+              onClear={history.clearAll}
+            />
           </div>
         </aside>
       )}
@@ -145,11 +173,38 @@ export default function App() {
 
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 overflow-hidden">
-            {tool === "chat" && <ChatTool model={selected} config={config} />}
+            {tool === "chat" && (
+              <ChatTool
+                key={restoredSession?.id ?? "new"}
+                model={selected}
+                config={config}
+                restoredSession={restoredSession}
+                historyCallbacks={{
+                  onFirstMessage: (text) => history.createSession("chat", text),
+                  onUserMessage: (id, text) =>
+                    history.addMessage(id, { role: "user", content: text, timestamp: Date.now() }),
+                  onAiMessage: (id, text) =>
+                    history.addMessage(id, { role: "assistant", content: text, timestamp: Date.now() }),
+                }}
+              />
+            )}
             {tool === "prompt" && <PromptTool model={selected} />}
             {tool === "vision" && <VisionTool model={selected} />}
             {tool === "code" && <CodeTool model={selected} />}
-            {tool === "image-creation" && <ImageCreationTool model={selected} />}
+            {tool === "image-creation" && (
+              <ImageCreationTool
+                key={restoredImageSession?.id ?? "new-image"}
+                model={selected}
+                restoredSession={restoredImageSession}
+                historyCallbacks={{
+                  onFirstMessage: (text) => history.createSession("image-creation", text),
+                  onUserMessage: (id, text) =>
+                    history.addMessage(id, { role: "user", content: text, timestamp: Date.now() }),
+                  onAiMessage: (id, url) =>
+                    history.addMessage(id, { role: "assistant", content: url, timestamp: Date.now() }),
+                }}
+              />
+            )}
           </div>
 
           {rightPanel && (

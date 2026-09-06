@@ -1,15 +1,18 @@
-// src/components/tools/ChatTool.tsx
 import { useEffect, useRef, useState } from "react";
 import { LogoMark } from "../ui/LogoMark";
 import { Typing } from "../ui/Typing";
 import { useChat } from "../../hooks/useChat";
-import type { Model, Config } from "../../types";
+import type { Model, Config, Message } from "../../types";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import type { ChatSession } from "@/hooks/useChatHistory";
+import type { UseChatHistoryCallbacks } from "../../hooks/useChat";
 
 interface ChatToolProps {
     model: Model;
     config: Config;
+    historyCallbacks?: UseChatHistoryCallbacks;
+    restoredSession?: ChatSession | null;
 }
 
 const SUGGESTIONS = [
@@ -36,8 +39,19 @@ function formatDuration(totalSeconds: number): string {
     return m > 0? `${h}h ${m}m` : `${h}h`;
 }
 
-export function ChatTool({ model, config }: ChatToolProps) {
-    const { messages, input, setInput, typing, error, send, bottomRef } = useChat(model, config);
+export function ChatTool({ model, config, historyCallbacks, restoredSession }: ChatToolProps) {
+    const seedMessages: Message[] | undefined = restoredSession?.messages.length
+            ? restoredSession.messages.map((m, i) => ({
+                id: i,
+                role: m.role === "assistant" ? "ai" as const : "user" as const,
+                text: m.content,
+                timestamp: new Date(m.timestamp).toLocaleDateString("en-US", { hour: "2-digit", minute: "2-digit" }),
+                responseTime: undefined,
+    })) : undefined;
+
+    const { messages, input, setInput, typing, error, send, bottomRef } =
+        useChat(model, config, historyCallbacks, seedMessages, restoredSession?.id);
+    
     const taRef = useRef<HTMLTextAreaElement>(null); 
 
     const  [elapsed, setElapsed] = useState(0);
